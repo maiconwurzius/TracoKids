@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Montserrat", system-ui, -apple-system, sans-serif;
+  
+  /* Custom pastel highlights for child-themed elements */
+  --color-brand-purple: #8B5CF6;
+  --color-brand-yellow: #FBBF24;
+  --color-brand-pink: #EC4899;
+  --color-brand-cyan: #06B6D4;
+}
+
+/* Custom styles for smooth scrolling and animations */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+}

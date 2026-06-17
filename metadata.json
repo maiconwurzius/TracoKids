@@ -1,0 +1,6 @@
+{
+  "name": "Traço Kids",
+  "description": "Uma landing page de altíssima conversão de venda do material digital Traço Kids para alfabetização infantil.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
