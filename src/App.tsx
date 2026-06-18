@@ -24,10 +24,7 @@ import {
 } from 'lucide-react';
 
 // Import our custom interactive components
-import CheckoutModal from './components/CheckoutModal';
-
-// Path for our high resolution generated image asset representing the physical-looking sheets
-const heroImage = "/src/assets/images/traco_kids_hero_1781710173235.jpg";
+const CheckoutModal = React.lazy(() => import('./components/CheckoutModal'));
 
 // Helper to track Meta Pixel simulated events
 function trackPixelSimulated(eventName: string, params?: any) {
@@ -57,6 +54,73 @@ export default function App() {
       });
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Performance-optimized lazy script injector for Meta Pixel, UTMify, and Microsoft Clarity
+  useEffect(() => {
+    const loadDeferredScripts = () => {
+      // 1. Load Meta Pixel fbevents.js (if not already loaded)
+      const win = window as any;
+      if (win.fbq && !win.fbq.loaded_optimized) {
+        const fbScript = document.createElement('script');
+        fbScript.src = 'https://connect.facebook.net/en_US/fbevents.js';
+        fbScript.async = true;
+        document.head.appendChild(fbScript);
+        win.fbq.loaded_optimized = true;
+      }
+
+      // 2. Load UTMify and initialize parameters
+      const utmifyScript = document.createElement('script');
+      utmifyScript.src = 'https://cdn.utmify.com.br/scripts/utms/latest.js';
+      utmifyScript.setAttribute('data-utmify-prevent-xcod-sck', '');
+      utmifyScript.setAttribute('data-utmify-prevent-subids', '');
+      utmifyScript.async = true;
+      utmifyScript.defer = true;
+      document.head.appendChild(utmifyScript);
+
+      // 3. Load Microsoft Clarity (if not already loaded in the window or session context)
+      let sessionClarityLoaded = false;
+      try {
+        sessionClarityLoaded = !!sessionStorage.getItem('clarity_session_loaded');
+      } catch (e) {
+        // Handle sandboxes where sessionStorage is blocked
+      }
+
+      if (!win.clarity_loaded && !sessionClarityLoaded) {
+        win.clarity = win.clarity || function() {
+          (win.clarity.q = win.clarity.q || []).push(arguments);
+        };
+        const clarityScript = document.createElement('script');
+        clarityScript.async = true;
+        clarityScript.src = 'https://www.clarity.ms/tag/x90j7mcrp4';
+        
+        const firstScript = document.getElementsByTagName('script')[0];
+        if (firstScript && firstScript.parentNode) {
+          firstScript.parentNode.insertBefore(clarityScript, firstScript);
+        } else {
+          document.head.appendChild(clarityScript);
+        }
+        win.clarity_loaded = true;
+        try {
+          sessionStorage.setItem('clarity_session_loaded', 'true');
+        } catch (e) {
+          // Silent fallback if sessionStorage is unavailable in restricted iframe contexts
+        }
+      }
+    };
+
+    // Use idle state or small timeout to execute script insertions without competing with initial React hydrate/paint priority
+    if (document.readyState === 'complete') {
+      const scheduleTask = (window as any).requestIdleCallback || ((cb: any) => setTimeout(cb, 1200));
+      scheduleTask(loadDeferredScripts);
+    } else {
+      const handleLoad = () => {
+        const scheduleTask = (window as any).requestIdleCallback || ((cb: any) => setTimeout(cb, 1200));
+        scheduleTask(loadDeferredScripts);
+      };
+      window.addEventListener('load', handleLoad, { once: true });
+      return () => window.removeEventListener('load', handleLoad);
+    }
   }, []);
 
   const handleOpenCheckout = (origin: string, event?: React.MouseEvent) => {
@@ -278,7 +342,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* 3. HERO / VALUE PROPOSITION SECTION */}
+      <main id="main-content" className="flex-grow">
+        {/* 3. HERO / VALUE PROPOSITION SECTION */}
       <section id="hero-value-proposition" className="py-12 md:py-24 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
         {/* Left Side Content column */}
         <div id="hero-content-column" className="lg:col-span-7 space-y-7 text-center lg:text-left">
@@ -1074,6 +1139,8 @@ export default function App() {
         </div>
       </section>
 
+      </main>
+
       {/* Minimalistic physical footer info */}
       <footer id="legal-footer" className="bg-[#14100C] text-[#55463C] py-8 text-center text-[10px] px-6 border-t border-[#261E1A] font-semibold">
         <div className="max-w-7xl mx-auto space-y-3">
@@ -1088,10 +1155,14 @@ export default function App() {
       </footer>
 
       {/* Simulated Checkout Modal for Pix/Credit mock transactions */}
-      <CheckoutModal 
-        isOpen={isCheckoutOpen} 
-        onClose={() => setIsCheckoutOpen(false)} 
-      />
+      {isCheckoutOpen && (
+        <React.Suspense fallback={null}>
+          <CheckoutModal 
+            isOpen={isCheckoutOpen} 
+            onClose={() => setIsCheckoutOpen(false)} 
+          />
+        </React.Suspense>
+      )}
 
     </div>
   );
